@@ -6,7 +6,6 @@ import replicatorg.drivers.SimulationDriver;
 import replicatorg.drivers.commands.DriverCommand;
 import replicatorg.machine.Machine.JobTarget;
 import replicatorg.machine.model.MachineModel;
-import replicatorg.machine.model.MachineType;
 import replicatorg.model.GCodeSource;
 
 
@@ -59,7 +58,6 @@ public interface MachineInterface {
 	
 	
 	public String getMachineName();
-	public MachineType getMachineType();
 	
 	
 	// Job level commands
@@ -77,7 +75,7 @@ public interface MachineInterface {
 	 */
 	public void simulate(GCodeSource source);
 	
-	public void buildDirect(GCodeSource source);
+	public boolean buildDirect(GCodeSource source);
 	public boolean buildRemote(String remoteName);
 	public void buildToFile(GCodeSource source, String path);
 	public void upload(GCodeSource source, String remoteName);

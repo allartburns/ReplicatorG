@@ -126,13 +126,13 @@ class ProgressDialog extends JDialog implements ToolpathGenerator.GeneratorListe
 	static private Pattern patSliceToGcode = Pattern.compile("Slice to GCode.*layer ([0-9]+)[^0-9]");//Slice to GCode... layer %s.
 	static private Pattern patProcedureTook = Pattern.compile("(.*) procedure took");
 			
-	@Override
-	public void updateGenerator(final ToolpathGenerator.GeneratorEvent evt) {
+	public void updateGenerator(final String message) {
 
 		SwingUtilities.invokeLater(new Runnable() {
+
 			public void run() {
 				synchronized(ProgressDialog.this) {
-					String newMessage = evt.getMessage();
+					String newMessage = message;
 					String processName = "";
 					boolean logIt = true;
 					boolean showProgress = false;
@@ -242,8 +242,7 @@ class ProgressDialog extends JDialog implements ToolpathGenerator.GeneratorListe
 		});
 	}
 
-	@Override
-	public void generationComplete(ToolpathGenerator.GeneratorEvent evt) {
+	public void generationComplete(Completion completion, Object details) {
 		synchronized(this) {
 			setVisible(false);
 			setDone(true);

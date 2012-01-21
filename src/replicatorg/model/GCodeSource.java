@@ -1,7 +1,6 @@
 package replicatorg.model;
 
 import java.util.Iterator;
-import java.util.List;
 
 public interface GCodeSource extends Iterable<String> {
 	
@@ -10,8 +9,6 @@ public interface GCodeSource extends Iterable<String> {
 	 * @return a string iterator over the gcode
 	 */
 	Iterator<String> iterator();
-	
-	List<String> asList();
 	
 	int getLineCount();
 }

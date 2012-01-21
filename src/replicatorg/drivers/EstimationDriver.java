@@ -94,6 +94,7 @@ public class EstimationDriver extends DriverBaseImplementation {
 	}
 
 	static public String getBuildTimeString(double tempTime, boolean useSeconds) {
+		// System.out.println("build millis = " + tempTime);
 
 		String val = new String();
 
@@ -119,7 +120,7 @@ public class EstimationDriver extends DriverBaseImplementation {
 			// string formatting
 			if (days > 0)
 				val += ", ";
-			val += hours + " hr";
+			val += hours + " hour";
 			if (hours > 1)
 				val += "s";
 		}
@@ -132,7 +133,7 @@ public class EstimationDriver extends DriverBaseImplementation {
 			// string formatting
 			if (days > 0 || hours > 0)
 				val += ", ";
-			val += minutes + " min.";
+			val += minutes + " minute";
 			if (minutes > 1)
 				val += "s";
 		}
@@ -146,7 +147,7 @@ public class EstimationDriver extends DriverBaseImplementation {
 				// string formatting
 				if (days > 0 || hours > 0 || minutes > 0)
 					val += ", ";
-				val += seconds + " sec";
+				val += seconds + " second";
 				if (seconds > 1)
 					val += "s";
 			}

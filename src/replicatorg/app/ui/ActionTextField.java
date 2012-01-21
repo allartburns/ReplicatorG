@@ -61,14 +61,6 @@ public abstract class ActionTextField extends JFormattedTextField {
 
 		@Override
 		public void keyTyped(KeyEvent arg0) {
-			//TRICKY:
-			// mac: Tab and Enter are handled by focusLost,
-			// linux: Enter is not handled by focusLost, we do it manually
-			// windows: ???
-			if ( arg0.getKeyChar() == KeyEvent.VK_ENTER) {
-				textField.notifyDoneModifying();
-			}
-			
 			if ( arg0.getKeyChar() == KeyEvent.VK_ESCAPE) {
 				textField.notifyRestoreOriginalValue();
 			}

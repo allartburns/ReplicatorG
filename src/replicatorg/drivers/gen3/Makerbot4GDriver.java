@@ -42,50 +42,38 @@ public class Makerbot4GDriver extends Sanguino3GDriver {
 		super.stop(abort);
 	}
 	
-	private Iterable<AxisId> getHijackedAxes(int toolhead){
+	/** 
+	 * Returns the hijacked axes for the current tool.
+	 */
+	private Iterable<AxisId> getHijackedAxes() {
 		Vector<AxisId> axes = new Vector<AxisId>();
-		AxisId toolheadAxis = machine.getTool(toolhead).getMotorStepperAxis();
-		if( extruderHijackedMap.containsKey( toolheadAxis ) )
-			axes.add(toolheadAxis);
+		for ( Map.Entry<AxisId,ToolModel> entry : stepExtruderMap.entrySet()) {
+			ToolModel curTool = machine.currentTool();
+			AxisId axis = entry.getKey();
+			if (curTool.equals(entry.getValue())) {
+				axes.add(axis);
+			}
+		}
 		return axes;
-	}	
-
-//	/** 
-//	 * Returns the hijacked axes for the current tool.
-//	 */
-//	@Deprecated
-//	private Iterable<AxisId> getHijackedAxes() {
-//		Vector<AxisId> axes = new Vector<AxisId>();
-//		
-//		for ( Map.Entry<AxisId,ToolModel> entry : stepExtruderMap.entrySet()) {
-//			ToolModel curTool = machine.currentTool();
-//			if (curTool.equals(entry.getValue())) {
-//				axes.add(curTool.getMotorStepperAxis());
-//			}
-//		}
-//		return axes;
-//	}
+	}
 
 	/** 
 	 * Returns the hijacked axes for all tools.
 	 */
 	private Iterable<AxisId> getAllHijackedAxes() {
 		Vector<AxisId> axes = new Vector<AxisId>();
-		for ( Map.Entry<AxisId,ToolModel> entry : extruderHijackedMap.entrySet()) {
+		for ( Map.Entry<AxisId,ToolModel> entry : stepExtruderMap.entrySet()) {
 			AxisId axis = entry.getKey();
 			axes.add(axis);
 		}
 		return axes;
 	}
 
-	/** relies on currentTool too much **/
-	@Deprecated 
 	protected void queueAbsolutePoint(Point5d steps, long micros) throws RetryException {
 		// Turn on fan if necessary
-		int toolhead = machine.currentTool().getIndex();
-		for (AxisId axis : getHijackedAxes(toolhead)) {
+		for (AxisId axis : getHijackedAxes()) {
 			if (steps.axis(axis) != 0) {
-				enableStepperExtruderFan(true,toolhead);
+				enableStepperExtruderFan(true);
 			}
 		}
 
@@ -152,7 +140,6 @@ public class Makerbot4GDriver extends Sanguino3GDriver {
 	 * Overridden to not talk to the DC motor driver. This driver is reused for the stepper motor fan
 	 */
 	public void enableMotor() throws RetryException {
-		Base.logger.fine("MakerBot4G.enableMotor()");//REMOVE
 		machine.currentTool().enableMotor();
 	}
 	
@@ -160,7 +147,6 @@ public class Makerbot4GDriver extends Sanguino3GDriver {
 	 * Overridden to not talk to the DC motor driver. This driver is reused for the stepper motor fan
 	 */
 	public void disableMotor() throws RetryException {
-		Base.logger.fine("MakerBot4G.enableMotor()"); //REMOVE
 		machine.currentTool().disableMotor();
 	}
 	
@@ -174,36 +160,28 @@ public class Makerbot4GDriver extends Sanguino3GDriver {
 	/**
 	 * Overridden to not talk to the DC motor driver. This driver is reused for the stepper motor fan
 	 */
-	public void setMotorRPM(double rpm, int toolhead) throws RetryException {
+	public void setMotorRPM(double rpm) throws RetryException {
 		machine.currentTool().setMotorSpeedRPM(rpm);
 	}
 	
 	
 	public void enableDrives() throws RetryException {
-		enableStepperExtruderFan(true,machine.currentTool().getIndex());
+		enableStepperExtruderFan(true);
 		
 		super.enableDrives();
 	}
 
 	public void disableDrives() throws RetryException {
-		enableStepperExtruderFan(false,machine.currentTool().getIndex());
+		enableStepperExtruderFan(false);
 		
 		super.disableDrives();
 	}
 	
 	/**
-	 * Due to async command dispatch, this version should not be called.
-	 */
-	@Deprecated 
-	public void enableStepperExtruderFan(boolean enabled) throws RetryException {
-		enableStepperExtruderFan(enabled, machine.currentTool().getIndex());
-	}
-
-	/**
 	 * Will turn on/off the stepper extruder fan if it's not already in the correct state.
 	 * 
 	 */
-	public void enableStepperExtruderFan(boolean enabled, int toolIndex) throws RetryException {
+	public void enableStepperExtruderFan(boolean enabled) throws RetryException {
 		
 		// Always re-enable the fan when 
 		if (this.stepperExtruderFanEnabled == enabled) return;
@@ -220,7 +198,7 @@ public class Makerbot4GDriver extends Sanguino3GDriver {
 
 		// send it!
 		PacketBuilder pb = new PacketBuilder(MotherboardCommandCode.TOOL_COMMAND.getCode());
-		pb.add8((byte) toolIndex);
+		pb.add8((byte) machine.currentTool().getIndex());
 		pb.add8(ToolCommandCode.TOGGLE_MOTOR_1.getCode());
 		pb.add8((byte) 1); // payload length
 		pb.add8(flags);
@@ -228,7 +206,7 @@ public class Makerbot4GDriver extends Sanguino3GDriver {
 
 		// Always use max PWM
 		pb = new PacketBuilder(MotherboardCommandCode.TOOL_COMMAND.getCode());
-		pb.add8((byte) toolIndex);
+		pb.add8((byte) machine.currentTool().getIndex());
 		pb.add8(ToolCommandCode.SET_MOTOR_1_PWM.getCode());
 		pb.add8((byte) 1); // length of payload.
 		pb.add8((byte) 255);
@@ -237,8 +215,7 @@ public class Makerbot4GDriver extends Sanguino3GDriver {
 		this.stepperExtruderFanEnabled = enabled;
 	}
 
-	EnumMap<AxisId,ToolModel> extruderHijackedMap = new EnumMap<AxisId,ToolModel>(AxisId.class);
-	
+	EnumMap<AxisId,ToolModel> stepExtruderMap = new EnumMap<AxisId,ToolModel>(AxisId.class);
 	
 	@Override
 	/**
@@ -255,7 +232,7 @@ public class Makerbot4GDriver extends Sanguino3GDriver {
 					if (m.hasAxis(axis)) {
 						// If we're seizing an axis for an extruder, remove it from the available axes and get
 						// the data associated with that axis.
-						extruderHijackedMap.put(axis,tm);
+						stepExtruderMap.put(axis,tm);
 					} else {
 						Base.logger.severe("Tool claims unavailable axis "+axis.name());
 					}
@@ -265,22 +242,5 @@ public class Makerbot4GDriver extends Sanguino3GDriver {
 			}
 		}
 	}
-	
-	
-	@Override
-	public EnumMap<AxisId, String> getAxisAlises() {
-		/// Returns a set of Axes that are overridden or hijacked, 
-		/// and a string to indicate what they are overridden or hijacked for.
-		EnumMap<AxisId,String> map = new EnumMap<AxisId,String>(AxisId.class);
-		for ( AxisId id : extruderHijackedMap.keySet() ) {
-			ToolModel t = extruderHijackedMap.get(id);
-			map.put(id,t.getName());
-		}
-		return map;
-	}
 
-	@Override 
-	public String getMachineType(){ return "Thing-O-Matic/CupCake CNC"; } 
-
-	
 }

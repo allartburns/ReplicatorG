@@ -6,7 +6,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import java.awt.BorderLayout;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -31,16 +30,12 @@ public class InfoPanel extends JFrame {
 	
 	public InfoPanel() {
 		super("About this Makerbot");
-		JPanel panel = new JPanel();
+		JPanel panel = new JPanel(new MigLayout());
 
-		infoArea = new JTextArea("ReplicatorG:",40,80);
+		infoArea = new JTextArea("ReplicatorG:",40,60);
 		infoArea.setFont(infoArea.getFont().deriveFont(11f));
-		panel.setLayout(new BorderLayout());
-		panel.add(new JScrollPane(infoArea),BorderLayout.CENTER);
-
-		getContentPane().setLayout(new BorderLayout());
-		getContentPane().add(panel,BorderLayout.CENTER);	
-	
+		panel.add(new JScrollPane(infoArea));
+		
 		add(panel);
 		pack();
 		
@@ -78,7 +73,7 @@ public class InfoPanel extends JFrame {
 		info += "Machine" + "\n";
 		info += " Profile Name: " + Base.preferences.get("machine.name", "") + "\n";
 		info += " Driver Type: " + Base.getMachineLoader().getDriver().getDriverName() + "\n";
-		info += " Name: " + Base.getMachineLoader().getMachineInterface().getMachineName() + "\n";
+		info += " Name: " + Base.getMachineLoader().getMachine().getMachineName() + "\n";
 
 		// TODO: Only if a printer is connected?
 		info += " Motherboard firmware version: " + driver.getFirmwareInfo() + "\n";

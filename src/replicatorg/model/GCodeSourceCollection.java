@@ -1,8 +1,6 @@
 package replicatorg.model;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Vector;
 
 
@@ -71,14 +69,6 @@ public class GCodeSourceCollection implements GCodeSource {
 	@Override
 	public int getLineCount() {
 		return lineCount;
-	}
-
-	@Override
-	public List<String> asList() {
-		List<String> result = new ArrayList<String>();
-		for(Iterator<String> i = iterator(); i.hasNext();)
-			result.add(i.next());
-		return result;
 	}
 
 }

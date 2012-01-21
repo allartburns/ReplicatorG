@@ -170,7 +170,7 @@ public class MachineStatusPanel extends BGPanel implements MachineListener {
 			}
 				
 			final String s = String.format(
-					"Commands: %1$7d / %2$7d  (%3$3.2f%%) | Elapsed: %4$s  |  Est. done in:  %5$s",
+					"Commands:  %1$7d / %2$7d  (%3$3.2f%%)   |   Elapsed:  %4$s  |  Estimated Remaining:  %5$s",
 					event.getLines(), event.getTotalLines(), 
 					percentComplete,
 					EstimationDriver.getBuildTimeString(event.getElapsed(), true),
@@ -199,23 +199,19 @@ public class MachineStatusPanel extends BGPanel implements MachineListener {
 	}
 
 	public void toolStatusChanged(MachineToolStatusEvent event) {
-		
 		final MachineToolStatusEvent e = event;
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				Vector<ToolModel> tools = e.getSource().getModel().getTools();
 				String tempString = "";
 				
-				/// TRICKY: we assume that the MachineThread is calling these functions 
-				/// for us, at least once every few seconds, to keep the local temperaure cache up to date.
-				/// re-enable this if you want to test that, or if MachineThread stops checking temp
-				//e.getSource().getDriver().readAllPlatformTemperatures();
-				//e.getSource().getDriver().readAllTemperatures(); 
+				// This call makes sure our temperatures are up to date
+				e.getSource().getDriver().readPlatformTemperature();
 				
 				for(ToolModel t : tools)
 				{
 					double temp= t.getCurrentTemperature();
-					tempString += String.format(" "+t.getName()+": %1$3.1f\u00B0C  ", temp);
+					tempString += String.format("Toolhead "+t.getIndex()+": %1$3.1f\u00B0C  ", temp);
 					if(t.hasHeatedPlatform())
 					{
 						double ptemp = t.getPlatformCurrentTemperature();

@@ -20,8 +20,7 @@ public class GcodeSelectWindow
 		chooser.setFileFilter(filter);
 		chooser.showOpenDialog(chooseFramer);
 		File fr = chooser.getSelectedFile();
-		if(fr != null)
-			lastdir = fr.getParentFile();
+		lastdir = fr.getParentFile();
 		return fr;
 	}
 	public static File go()
@@ -38,23 +37,16 @@ public class GcodeSelectWindow
 		chooser.setFileFilter(filter);
 		chooser.showOpenDialog(chooseFramer);
 		File f = chooser.getSelectedFile();
-		if(f != null)
-			lastdir = f.getParentFile();
+		lastdir = f.getParentFile();
 		return f;
 	}
 	public static String goString()
 	{
-		File result = go();
-		if(result != null)
-			return result.getAbsolutePath();
-		return null;
+		return go().getAbsolutePath();
 	}
 	public static String goString(File f)
 	{
-		File result = go(f);
-		if(result != null)
-			return result.getAbsolutePath();
-		return null;
+		return go(f).getAbsolutePath();
 	}
 }
 

@@ -119,36 +119,31 @@ public class Makerbot4GAlternateDriver extends Makerbot4GDriver {
 	}
 
 	/**
-	 * In legacy use, delayed while a DC motor ran. For compatiblity, this function
-	 * creates a Point5D to do 'extrude while sitting still'. 
+	 * Overloaded to support extruding without moving by converting a delay in to an extruder command
 	 */
 	public void delay(long millis) throws RetryException {
-		Base.logger.finer("Delaying " + millis + " millis.");	
-	
-		Point5d steps = pointsFromHijackedAxes( machine.currentTool(), millis / 60000d);
-
-		/// All axes relative to avoid dealing with absolute coords
-		if (steps.length() > 0) {
-			queueNewPoint(steps, millis * 1000, 0x1f); 
+		if (Base.logger.isLoggable(Level.FINER)) {
+			Base.logger.log(Level.FINER,"Delaying " + millis + " millis.");
 		}
-		// This resulted in no stepper movements -> fall back to normal delay
+
+		Point5d steps = new Point5d();
+		modifyHijackedAxes(steps, millis / 60000d);
+
+		if (steps.length() > 0) {
+			queueNewPoint(steps, millis * 1000, 0x1f); // All axes relative to avoid dealing with absolute coords
+		}
 		else {
-			super.delay(millis); 
+			super.delay(millis); // This resulted in no stepper movements -> fall back to normal delay
 		}
 	}
 	
 	/** 
-	 * Each Axis can be overriden (hijacked) by XML settings. Return all overridden
-	 * axes associated with tool curTool.
-	 * @param curTool target tool to find overrides for
-	 * @return a list of AxisId containing all overriden axis for tool curTool
+	 * Returns the hijacked axes for the current tool.
 	 */
-	protected Iterable<AxisId> getHijackedAxes(ToolModel curTool) {
-		//NOTE:
-		/// can be reduced to '		axes.add(curTool.getMotorStepperAxis());' 
-		/// once we get rid of curTool calls
+	private Iterable<AxisId> getHijackedAxes() {
 		Vector<AxisId> axes = new Vector<AxisId>();
-		for ( Map.Entry<AxisId,ToolModel> entry : extruderHijackedMap.entrySet()) {
+		for ( Map.Entry<AxisId,ToolModel> entry : stepExtruderMap.entrySet()) {
+			ToolModel curTool = machine.currentTool();
 			AxisId axis = entry.getKey();
 			if (curTool.equals(entry.getValue())) {
 				axes.add(axis);
@@ -157,16 +152,12 @@ public class Makerbot4GAlternateDriver extends Makerbot4GDriver {
 		return axes;
 	}
 
-	
 	/** 
-	 * Each Axis can be overriden (hijacked) by XML settings. Return all overridden
-	 * axes for the currently loaded machine.
-	 * @return a list of AxisId containing all overriden axis for the loaded machine profile
+	 * Returns the hijacked axes for all tools.
 	 */
-	protected Iterable<AxisId> getAllHijackedAxes() {
+	private Iterable<AxisId> getAllHijackedAxes() {
 		Vector<AxisId> axes = new Vector<AxisId>();
-
-		for ( Map.Entry<AxisId,ToolModel> entry : extruderHijackedMap.entrySet()) {
+		for ( Map.Entry<AxisId,ToolModel> entry : stepExtruderMap.entrySet()) {
 			AxisId axis = entry.getKey();
 			axes.add(axis);
 		}
@@ -185,7 +176,7 @@ public class Makerbot4GAlternateDriver extends Makerbot4GDriver {
 		Point5d movement = new Point5d();
 		double minutes = delta.length() / getCurrentFeedrate();
 
-		for (AxisId axis : getHijackedAxes(machine.currentTool()) ) {
+		for (AxisId axis : getHijackedAxes()) {
 			ToolModel curTool = machine.currentTool();
 			if (curTool.isMotorEnabled()) {
 				double extruderStepsPerMinute = curTool.getMotorSpeedRPM() * curTool.getMotorSteps();
@@ -197,40 +188,30 @@ public class Makerbot4GAlternateDriver extends Makerbot4GDriver {
 	}
 
 	/**
-	 * Generates a Point5D for extrusion based on if an axis is hijacked, if a motor is enabled
-	 * and if the axis is created properly. 
 	 * Write a relative movement to any axes which has been hijacked where the extruder is turned on.
 	 * The axis will be moved with a length corresponding to the duration of the movement.
 	 * The speed of the hijacked axis will be clamped to its maximum feedrate.
 	 * If the extruder is off, the corresponding axes are set to a zero relative movement.
-	 * @param curTool target tool to check for axis hijacking
-	 * @param minutes extrusion time 
-	 * @return 	If a the axis for curTool is 'hijacked' and enabled returns a Point5d for extruding for time set 
-	 * by @minutes. If no axis is enabled and hijacked, returns an 'empty' Point5d with no motion.
+	 * @param steps
+	 * @param minutes
+	 * @return a bitmask with the relative bit set for all hijacked axes
 	 */
-	private Point5d pointsFromHijackedAxes(ToolModel curTool, double minutes) {
+	private int modifyHijackedAxes(Point5d steps, double minutes) {
 		int relative = 0;
-		Point5d steps = new Point5d();
-		Base.logger.finer("modify hijacked axes");
-		
-		for (AxisId axis : getHijackedAxes(machine.currentTool())) {
-			Base.logger.finer("modify hijacked axes doing " + axis.toString() );
+
+		for (AxisId axis : getHijackedAxes()) {
 			relative |= 1 << axis.getIndex();
 			double extruderSteps = 0;
-			
+			ToolModel curTool = machine.currentTool();
 			if (curTool.isMotorEnabled()) {
-				Base.logger.finer("modify hijacked axes doing enabled stuff" + axis.toString() );
 				double maxrpm = machine.getMaximumFeedrates().axis(axis) * machine.getStepsPerMM().axis(axis) / curTool.getMotorSteps();
 				double rpm = (curTool.getMotorSpeedRPM() > maxrpm) ? maxrpm : curTool.getMotorSpeedRPM();
 				boolean clockwise = machine.currentTool().getMotorDirection() == ToolModel.MOTOR_CLOCKWISE;
 				extruderSteps = rpm * curTool.getMotorSteps() * minutes * (clockwise?-1d:1d);
 			}
-			
-			Base.logger.finer("setting axis " + axis.toString() );
-			Base.logger.finer("setting extruderSteps" + Double.toString(extruderSteps) );
 			steps.setAxis(axis, extruderSteps);
 		}
-		return steps;
+		return relative;
 	}
 
 	public void stop(boolean abort) {
@@ -245,19 +226,18 @@ public class Makerbot4GAlternateDriver extends Makerbot4GDriver {
 
 	protected void queueNewPoint(Point5d steps, long us, int relative) throws RetryException {
 
-		Base.logger.finer("Makerbot4GAlternateDriver queueNewPoint");
-
 		// Turn on fan if necessary
-		for (AxisId axis : getHijackedAxes( machine.currentTool()) ) {
+		for (AxisId axis : getHijackedAxes()) {
 			if (steps.axis(axis) != 0) {
 				enableStepperExtruderFan(true);
 			}
 		}
 		PacketBuilder pb = new PacketBuilder(MotherboardCommandCode.QUEUE_POINT_NEW.getCode());
 
-		Base.logger.finer("Queued new-style point " + steps + " over "
+		if (Base.logger.isLoggable(Level.FINE)) {
+			Base.logger.log(Level.FINE,"Queued new-style point " + steps + " over "
 					+ Long.toString(us) + " usec., relative " + Integer.toString(relative));
-
+		}
 
 		// just add them in now.
 		pb.add32((int) steps.x());
@@ -295,7 +275,7 @@ public class Makerbot4GAlternateDriver extends Makerbot4GDriver {
 	/**
 	 * Overridden to not talk to the DC motor driver. This driver is reused for the stepper motor fan
 	 */
-	public void setMotorRPM(double rpm, int toolhead) throws RetryException {
+	public void setMotorRPM(double rpm) throws RetryException {
 		machine.currentTool().setMotorSpeedRPM(rpm);
 	}
 
@@ -349,8 +329,7 @@ public class Makerbot4GAlternateDriver extends Makerbot4GDriver {
 		this.stepperExtruderFanEnabled = enabled;
 	}
 
-	/// This is a list of which axis are hijacked for extruder use.
-	EnumMap<AxisId,ToolModel> extruderHijackedMap = new EnumMap<AxisId,ToolModel>(AxisId.class);
+	EnumMap<AxisId,ToolModel> stepExtruderMap = new EnumMap<AxisId,ToolModel>(AxisId.class);
 	
 	@Override
 	/**
@@ -365,10 +344,9 @@ public class Makerbot4GAlternateDriver extends Makerbot4GDriver {
 				try {
 					AxisId axis = AxisId.valueOf(stepAxisStr.toUpperCase());
 					if (m.hasAxis(axis)) {
-						Base.logger.finer("seize the axis for extrusion!  Hijacking axis "+axis.name());
 						// If we're seizing an axis for an extruder, remove it from the available axes and get
 						// the data associated with that axis.
-						extruderHijackedMap.put(axis,tm);
+						stepExtruderMap.put(axis,tm);
 						m.getAvailableAxes().remove(axis);
 					} else {
 						Base.logger.severe("Tool claims unavailable axis "+axis.name());
@@ -382,15 +360,11 @@ public class Makerbot4GAlternateDriver extends Makerbot4GDriver {
 	
 	@Override
 	/**
-	 * Overridden to not ask the board for the RPM as it would report the RPM from the extruder 
-	 * controller, which doesn't know about it in this case.
+	 * Overridden to not ask the board for the RPM as it would report the RPM from the extruder controller, which doesn't know about it in this case.
 	 */
 	public double getMotorRPM() {
 		double rpm = machine.currentTool().getMotorSpeedRPM();
 		machine.currentTool().setMotorSpeedReadingRPM(rpm);
 		return rpm;
 	}
-	
-	@Override 
-	public String getMachineType(){ return "Thing-O-Matic/CupCake CNC"; } 
 }

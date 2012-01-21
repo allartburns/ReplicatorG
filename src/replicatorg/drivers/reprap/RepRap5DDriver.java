@@ -1035,7 +1035,7 @@ public class RepRap5DDriver extends SerialDriver implements SerialFifoEventListe
 	 * Motor interface functions
 	 * @throws RetryException 
 	 **************************************************************************/
-	public void setMotorRPM(double rpm, int toolhead) throws RetryException {
+	public void setMotorRPM(double rpm) throws RetryException {
 		if (fiveD == false)
 		{
 			sendCommand(_getToolCode() + "M108 R" + df.format(rpm));
@@ -1045,7 +1045,7 @@ public class RepRap5DDriver extends SerialDriver implements SerialFifoEventListe
 			extrusionUpdater.setFeedrate(rpm);
 		}
 		
-		super.setMotorRPM(rpm, toolhead);
+		super.setMotorRPM(rpm);
 	}
 
 	public void setMotorSpeedPWM(int pwm) throws RetryException {

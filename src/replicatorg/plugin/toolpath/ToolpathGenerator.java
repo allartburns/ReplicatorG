@@ -1,12 +1,10 @@
 package replicatorg.plugin.toolpath;
 
 import java.awt.Frame;
-import java.util.EventObject;
 import java.util.LinkedList;
 
 import replicatorg.model.BuildCode;
 import replicatorg.model.BuildModel;
-import replicatorg.plugin.toolpath.ToolpathGenerator.GeneratorListener.Completion;
 
 /**
  * This is the abstract base class which describes a toolpath plugin.
@@ -19,33 +17,9 @@ public abstract class ToolpathGenerator {
 			SUCCESS,
 			FAILURE
 		};
-		public void updateGenerator(GeneratorEvent evt);
-		public void generationComplete(GeneratorEvent evt);
+		public void updateGenerator(String message);
+		public void generationComplete(Completion completion, Object details);
 	}
-	
-	public class GeneratorEvent extends EventObject {
-		private Completion completion;
-		private String message;
-		
-		public GeneratorEvent(Object source) {
-			this(source, "", null);
-		}
-		public GeneratorEvent(Object source, String message, Completion completion) {
-			super(source);
-			this.message = message;
-			this.completion = completion;
-		}
-		
-		public Completion getCompletion() {
-			return completion;
-		}
-		
-		public String getMessage() {
-			return message;
-		}
-		
-	}
-	public static String displayName = "A Toolpath Generator";
 	
 	protected BuildModel model;
 	protected LinkedList<GeneratorListener> listeners = new LinkedList<GeneratorListener>();
@@ -93,18 +67,16 @@ public abstract class ToolpathGenerator {
 	}
 	
 	public abstract BuildCode generateToolpath();
-	//should return a cached toolpath
-	public abstract BuildCode getGeneratedToolpath();
 	
 	public void emitUpdate(String message) {
 		for (GeneratorListener listener : listeners) {
-			listener.updateGenerator(new GeneratorEvent(this, message, null));
+			listener.updateGenerator(message);
 		}
 	}
 	
-	public void emitCompletion(GeneratorListener.Completion completion) {
+	public void emitCompletion(GeneratorListener.Completion completion, Object details) {
 		for (GeneratorListener listener : listeners) {
-			listener.generationComplete(new GeneratorEvent(this, null, completion));
+			listener.generationComplete(completion, details);
 		}
 	}
 

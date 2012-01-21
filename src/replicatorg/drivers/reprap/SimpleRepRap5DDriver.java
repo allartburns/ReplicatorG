@@ -413,10 +413,10 @@ public class SimpleRepRap5DDriver extends SerialDriver {
 	/***************************************************************************
 	 * Motor interface functions
 	 **************************************************************************/
-	public void setMotorRPM(double rpm, int toolhead) throws RetryException {
+	public void setMotorRPM(double rpm) throws RetryException {
 		sendCommand(_getToolCode() + "M108 R" + df.format(rpm));
 
-		super.setMotorRPM(rpm, toolhead);
+		super.setMotorRPM(rpm);
 	}
 
 	public void setMotorSpeedPWM(int pwm) throws RetryException {

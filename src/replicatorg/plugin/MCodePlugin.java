@@ -1,6 +1,6 @@
 package replicatorg.plugin;
 
-import replicatorg.app.gcode.GCodeCommand;
+import replicatorg.app.GCode;
 
 public interface MCodePlugin {
 	/**
@@ -17,5 +17,5 @@ public interface MCodePlugin {
 	 * In general, this function should return quickly, to avoid blocking replicatorG.
 	 * @param mcode the full line of m-code
 	 */
-	public void processMCode(GCodeCommand mcode);
+	public void processMCode(GCode mcode);
 }

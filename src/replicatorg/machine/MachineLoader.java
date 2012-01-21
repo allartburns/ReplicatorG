@@ -5,9 +5,7 @@ import replicatorg.drivers.Driver;
 
 /** Maintains a connection to one machine **/ 
 	public class MachineLoader {
-		
-		private MachineInterface singletonMI;
-		private String singletonMIType = "";
+		private MachineInterface machine;
 		
 		MachineCallbackHandler callbackHandler;
 		
@@ -29,52 +27,17 @@ import replicatorg.drivers.Driver;
 			}
 		}
 		
-		/**
-		 * 
-		 * @return whatever the current singleton machine interface is.
-		 */
-		public MachineInterface getMachineInterface() {
-			return singletonMI;
+		public MachineInterface getMachine() {
+			return machine;
 		}
-		
-		// Load a new machine
-		public MachineInterface getMachineInterface(String machineType) {
-
-			//if we have a matching singleton running, return it
-			if(singletonMI != null && machineType.equals(singletonMIType) ) {
-				return singletonMI;
-			}
-			//if we have nothing loaded, try to load that machine
-			else if (singletonMI == null || machineType.equals("") ){
-				singletonMI = MachineFactory.load(machineType, callbackHandler);
-				if(singletonMI != null)
-				{
-					singletonMIType = machineType;
-				}
-				return singletonMI;
-			}
-			// if we don't have matching types, warn, then load a new singleton over this one
-			else if (singletonMI != null && !machineType.equals(singletonMIType) ) {
-					Base.logger.severe("MachineLoader loading new machine type " + machineType + " over existing machine " + singletonMIType);
-					singletonMI.dispose();
-					singletonMI = MachineFactory.load(machineType, callbackHandler);
-					if(singletonMI != null)
-					{
-						singletonMIType = machineType;
-					}
-					return singletonMI;
-			}
-			return null;
-		}
-		
 		
 		/** True if the machine is loaded **/
 		public boolean isLoaded() {
-			return (singletonMI != null);
+			return (machine != null);
 		}
 		
 		public boolean isConnected() {
-			return (isLoaded() && singletonMI.isConnected());
+			return (isLoaded() && machine.isConnected());
 		}
 		
 		@Deprecated
@@ -82,15 +45,31 @@ import replicatorg.drivers.Driver;
 			if(!isLoaded()) {
 				return null;
 			}
-			return singletonMI.getDriver();
+			return machine.getDriver();
 		}
 		
+		// Load a new machine
+		public boolean load(String machineType) {
+			if (isLoaded()) {
+				machine.dispose();
+				machine = null;
+			}
+			
+			machine = MachineFactory.load(machineType, callbackHandler);
+			
+			if (machine == null) {
+				// no err,  the above load() function prints an error
+				return false;
+			}
+			
+			return true;
+		}
 		
 		// Do we ever want to do this?
 		public void unload() {
 			if (isLoaded()) {
-				singletonMI.dispose();
-				singletonMI = null;
+				machine.dispose();
+				machine = null;
 			}
 		}
 		
@@ -101,13 +80,13 @@ import replicatorg.drivers.Driver;
 				return;
 			}
 			
-			singletonMI.connect(port);
+			machine.connect(port);
 		}
 		
 		// tell the machine to drop its connection
 		public void disconnect() {
 			if (isLoaded()) {
-				singletonMI.disconnect();
+				machine.disconnect();
 			}
 		}
 		
@@ -118,14 +97,5 @@ import replicatorg.drivers.Driver;
 
 		public void removeMachineListener(MachineListener listener) {
 			callbackHandler.removeMachineListener(listener);
-		}
-		
-		/// Clear out singleton object, in cases where we know we must, must, must rebuild the Machine objects
-		public void clearSingleton() {
-			if(singletonMI != null) {
-				singletonMI.dispose();
-				singletonMI = null;
-			}
-
 		}
 	}

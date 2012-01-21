@@ -43,7 +43,6 @@ import replicatorg.app.Base;
 import replicatorg.app.Base.InitialOpenBehavior;
 import replicatorg.app.util.PythonUtils;
 import replicatorg.app.util.SwingPythonSelector;
-import replicatorg.machine.MachineInterface;
 import replicatorg.uploader.FirmwareUploader;
 
 /**
@@ -164,18 +163,14 @@ public class PreferencesWindow extends JFrame implements GuiConstants {
 		}
 	}
 	
-	/**
-	 * 
-	 * @param driver Needed for the Replicator-specific options
-	 */
-	public PreferencesWindow(final MachineInterface machine) {
+	public PreferencesWindow() {
 		super("Preferences");
 		setResizable(true);
 		
 		Image icon = Base.getImage("images/icon.gif", this);
 		setIconImage(icon);
 		
-		JTabbedPane prefTabs = new JTabbedPane();
+		JTabbedPane basicVSadvanced = new JTabbedPane();
 		
 		JPanel basic = new JPanel();
 		
@@ -429,17 +424,9 @@ public class PreferencesWindow extends JFrame implements GuiConstants {
 				}
 			});
 		}
-		
-		addInitialFilePrefs(content);
-		
-		prefTabs.add(basic, "Basic");
-		prefTabs.add(advanced, "Advanced");
 
-		content = getContentPane();
-		content.setLayout(new MigLayout());
-		
-		content.add(prefTabs, "wrap");
-		
+		addInitialFilePrefs(content);
+
 		JButton allPrefs = new JButton("View All Prefs");
 		content.add(allPrefs, "split");
 		allPrefs.addActionListener(new ActionListener() {
@@ -467,6 +454,10 @@ public class PreferencesWindow extends JFrame implements GuiConstants {
 			}
 		});
 		content.add(button, "tag ok");
+
+		basicVSadvanced.add(basic, "Basic");
+		basicVSadvanced.add(advanced, "Advanced");
+		getContentPane().add(basicVSadvanced);
 		
 		showCurrentSettings();
 
