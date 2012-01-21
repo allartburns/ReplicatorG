@@ -198,12 +198,8 @@ public class SerialPassthroughDriver extends SerialDriver {
 					// System.out.println("current: " + result);
 					int index;
 					while ((index = result.indexOf('\n')) >= 0) {
-						String line = result.substring(0, index).trim(); // trim
-																			// to
-																			// remove
-																			// any
-																			// trailing
-																			// \r
+						// trim to remove any trailing \r
+						String line = result.substring(0, index).trim();
 						result = result.substring(index + 1);
 						if (line.length() == 0)
 							continue;

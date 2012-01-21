@@ -734,7 +734,8 @@ public class Sanguino3GDriver extends SerialDriver
 			runCommand(pb.getPacket());
 		}
 		
-		// FIXME: We used to check for version here, but this will only work if we're connected. Atm., we'll rather
+		// FIXME: We used to check for version here, but this will
+		// only work if we're connected. Atm., we'll rather
 		// require the latest firmware.
 		// getVersion().atLeast(new Version(2,4)) && toolVersion.atLeast(new Version(2,6))
 		if (this.machine.getTool(toolIndex) != null &&
